@@ -1,0 +1,27 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Description: Coleta de dados.
+Resources:
+  # Criar função lambda agendada
+  lambdafunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: dataops-coleta-vacinas-ci-cd # nome da função
+      Handler: lambda_function.lambda_handler # nome do arquivo e método de onde está a função
+      Runtime: python3.7 # ambiente de execução
+      CodeUri: ./app # local onde estarão os arquivos da função
+      Description: Coletar dados de vacinas.
+      MemorySize: 512 # memória utilizada pela funçãop
+      Timeout: 900 # tempo máximo de execução, em segundos
+      Role: !Sub arn:aws:iam::${AWS::AccountId}:role/LabRole # IAM role da função para permissões a outros recursos da AWS
+      Events: # Evento agendado para execução
+        ScheduledFunction:
+          Type: Schedule
+          Properties:
+            Schedule: cron(55 00 * * ? *) # executa todo dia às 10:15
+            Name: dataops-agenda-coleta-vacina
+            Input: '{
+              "url":"https://exemplo-vacinas-dataops.s3.amazonaws.com/part-00000-04974485-11fc-4d26-b48f-3b9094047acf.c000.csv", 
+              "uf":"ac"
+            }' # evento com parâmetros que serão enviados para a função lambda
+            # OBS: Pegue um link de arquivo de vacinação aqui: https://opendatasus.saude.gov.br/dataset/covid-19-vacinacao/resource/5093679f-12c3-4d6b-b7bd-07694de54173. Clique com o botão direito em um dos arquivos do Acre e clique em "Copiar endereço do link". Coloque este link no lugar de LINK (valor da url no JSON acima).
